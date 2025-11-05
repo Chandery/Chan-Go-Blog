@@ -1,0 +1,15 @@
+<!-- layouts/shortcodes/status_card.html -->
+<div class="status-card">
+    {{- with .Get "title" -}}
+      <h3 class="status-card__title">{{ . }}</h3>
+    {{- end -}}
+    {{- with .Get "status" -}}
+      <p class="status-card__status">{{ . }}</p>
+    {{- end -}}
+    {{- if .Inner -}}
+      <div class="status-card__body">
+        {{- .Inner | markdownify -}}
+      </div>
+    {{- end -}}
+  </div>
+  

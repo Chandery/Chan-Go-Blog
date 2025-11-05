@@ -1,0 +1,161 @@
+{{- /*
+  Partial: head/seo/images.html
+  Purpose: Handles discovery, processing, and error reporting for SEO images.
+
+  Repo: https://github.com/oxypteros/alpha
+*/}}
+{{- $filename := "" -}}
+{{- $path := "" -}}
+{{- $seoImage := "" -}}
+{{- $processedImage := "" -}}
+{{- $imageQualityError := false -}}
+{{- $imageNotFoundError := false -}}
+{{- $globalImageNotFoundError := false -}}
+{{- $globalImageQualityError := false -}}
+
+{{- /* Define Quality Parameters */ -}}
+{{- $targetWidth := 1200 -}}
+{{- $targetHeight := 630 -}}
+{{- $targetRatio := 1.91 -}}
+{{- $tolerance := 0.1 -}}
+{{- /* Image Discovery */}}
+
+{{- with .Page.Params.seo_image }}
+  {{- $filename = . -}}
+
+  {{- /* SEO image in assets ( mainly for _index.md) */}}
+  {{- $path = printf "img/%s" $filename -}}
+  {{- $seoImage = resources.Get $path -}}
+
+  {{- /* Page Bundle SEO image (should be used as Default) */}}
+  {{- if not $seoImage }}
+    {{- $seoImage = $.Page.Resources.GetMatch $filename -}}
+  {{- end }}
+
+  {{- /* Image not found. Inform LiVa */}}
+  {{- if not $seoImage -}}
+    {{- $imageNotFoundError = $filename -}}
+  {{- end -}}
+{{- end }}
+
+{{- /* Image Processing */}}
+{{- if $seoImage }}
+  {{- /* Image quality check */}}
+
+  {{- /* Promoted */}}
+  {{- if and (eq $seoImage.Width $targetWidth) (eq $seoImage.Height $targetHeight) }}
+    {{- $processedImage = $seoImage -}}
+  {{- else }}
+    {{- /* Good enough fix it */}}
+    {{- $currentRatio := div (float $seoImage.Width) $seoImage.Height -}}
+    {{- $ratioDiff := sub $currentRatio $targetRatio -}}
+    {{- $absRatioDiff := cond (lt $ratioDiff 0) (mul $ratioDiff -1) $ratioDiff -}}
+
+    {{- if and (ge $seoImage.Width $targetWidth) (le $absRatioDiff $tolerance) }}
+      {{- $processedImage = $seoImage.Fill "1200x630" -}}
+    {{- else -}}
+      {{- /* Failed. bad image flag it and use original */}}
+      {{- $processedImage = $seoImage -}}
+      {{- $imageQualityError = true -}}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- /* Global Param Fallback */}}
+{{- if not $processedImage }}
+  {{- with .Site.Params.seo_default_image }}
+    {{- $path = printf "img/%s" . -}}
+    {{- with resources.Get $path }}
+      {{- $fallbackImage := . -}}
+      {{- /* Promoted */}}
+      {{- if and (eq $fallbackImage.Width $targetWidth) (eq $fallbackImage.Height $targetHeight) }}
+        {{- $processedImage = $fallbackImage -}}
+      {{- else }}
+        {{- /* Good enough fix it */}}
+        {{- $currentRatio := div (float $fallbackImage.Width) $fallbackImage.Height -}}
+        {{- $ratioDiff := sub $currentRatio $targetRatio -}}
+        {{- $absRatioDiff := cond (lt $ratioDiff 0) (mul $ratioDiff -1) $ratioDiff -}}
+
+        {{- if and (ge $fallbackImage.Width $targetWidth) (le $absRatioDiff $tolerance) }}
+          {{- $processedImage = $fallbackImage.Fill "1200x630" -}}
+        {{- else -}}
+          {{- /* Failed. bad image flag it and use original */}}
+          {{- $processedImage = $fallbackImage -}}
+          {{- $globalImageQualityError = true -}}
+        {{- end }}
+      {{- end }}
+    {{- else }}
+      {{- $globalImageNotFoundError = $path -}}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- /* LiVa Error Reporting */}}
+{{- $livaWarnEnabled := .Site.Params.livaWarn_enabled | default true -}}
+{{- $livaEnabled := and hugo.IsDevelopment (.Site.Params.liva_enabled | default true) -}}
+{{- if or $livaWarnEnabled $livaEnabled -}}
+  {{- $livaHeadFmErrors := slice -}}
+  {{- $livaHeadConfigErrors := slice -}}
+  {{- $page := .Page.Permalink -}}
+  {{- $livaErrorCode := "" }}
+  {{- $filePath := "" -}}
+  {{- if .Page.File -}}
+    {{- $filePath = .Page.File.Path -}}
+  {{- end -}}
+
+  {{- /* Image Not Found */}}
+  {{- if $imageNotFoundError -}}
+    {{- $livaErrorCode = "liva-fm-171" }}
+    {{- $seoImage404Error := dict
+      "code" $livaErrorCode
+      "page" $page
+      "file" $filePath
+      "path" $path
+      "keyValue" $imageNotFoundError
+    -}}
+    {{- $livaHeadFmErrors = $livaHeadFmErrors | append $seoImage404Error -}}
+  {{- end -}}
+
+  {{- if $imageQualityError -}}
+    {{- $livaErrorCode = "liva-fm-172" }}
+    {{- $seoBadImageError := dict
+      "code" $livaErrorCode
+      "page" $page
+      "file" $filePath
+      "path" $path
+      "keyValue" $filename
+    -}}
+    {{- $livaHeadFmErrors =  $livaHeadFmErrors | append $seoBadImageError -}}
+  {{- end -}}
+
+  {{- if $globalImageNotFoundError -}}
+    {{- $livaErrorCode = "liva-cfg-132" }}
+    {{- $configSeoImage404Error := dict
+      "code" $livaErrorCode
+      "path" $globalImageNotFoundError
+      "keyValue" .Site.Params.seo_default_image
+    -}}
+    {{- $livaHeadConfigErrors = $livaHeadConfigErrors | append $configSeoImage404Error -}}
+  {{- end -}}
+
+  {{- if $globalImageQualityError -}}
+    {{- $livaErrorCode = "liva-cfg-133" }}
+    {{- $configBadSeoImageError := dict
+      "code" $livaErrorCode
+      "path" $path
+      "keyValue" .Site.Params.seo_default_image
+    -}}
+    {{- $livaHeadConfigErrors = $livaHeadConfigErrors | append $configBadSeoImageError -}}
+  {{- end -}}
+  {{- .Store.Set "livaHeadFmErrors"  $livaHeadFmErrors -}}
+  {{- .Store.Set "livaHeadConfigErrors" $livaHeadConfigErrors -}}
+{{- end -}}
+
+{{- /* Data Population */}}
+{{- $imageData := dict -}}
+
+{{- if $processedImage }}
+  {{- $imageData = dict "image" $processedImage.Permalink "imageWidth" $processedImage.Width "imageHeight" $processedImage.Height -}}
+{{- end }}
+
+{{- return $imageData -}}

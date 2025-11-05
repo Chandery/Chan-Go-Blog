@@ -1,0 +1,86 @@
+{{- /*
+  Partial: tail/js.html
+  Purpose: Manages the loading of JavaScript assets before the </body>.
+
+  Behavior:
+  - Append an user-defined `custom-tail.js` for adding custom JavaScript.
+  - Build and append any additional conditionally enabled Alpha scripts.
+  - Append conditionally a local Goatcounter script.
+  - All scripts are processed for development and production.
+
+  Repo: https://github.com/oxypteros/alpha
+*/}}
+
+{{- /*
+  Assets: js/custom-tail.js
+  Purpose: Allows users to inject their own JavaScript into the body of every page.
+
+  Behavior:
+  - The script is only included if the `custom-tail.js` file exists and contains
+  code beyond a JSDoc-style comment block (pre-defined).
+  - To use it copy or create the file at `/assets/js/custom-tail.js`
+  - Processed by js.Build for minification and fingerprinting in production.
+*/}}
+{{- with resources.Get "js/custom-tail.js" }}
+  {{- /* Check for content beyond the comment block */}}
+  {{- $content := .Content | strings.TrimSpace -}}
+  {{- $content := replaceRE `(?s)/\*\*\*.*?\*/` "" $content | strings.TrimSpace -}}
+  {{- if $content }}
+    {{- $opts := dict "minify" hugo.IsProduction -}}
+    {{- $jsBuilt := . | js.Build $opts -}}
+    {{- $finalJs := cond hugo.IsProduction ($jsBuilt | fingerprint) $jsBuilt -}}
+    <script
+      src="{{ $finalJs.RelPermalink }}"
+      {{- with $finalJs.Data.Integrity }}
+        integrity="{{- . -}}" crossorigin="anonymous"
+      {{- end }}
+    ></script>
+  {{- end }}
+{{- end }}
+
+{{- /*
+  Assets: alpha/js/alpha-contact.js
+  Purpose: Powers the website's contact form submission.
+
+  Behavior:
+  - Send the contact form values to the webhook defined in params.toml
+  (`make_hook`)
+  - Processed by js.Build for minification and fingerprinting in production.
+*/}}
+{{- if .Page.HasShortcode "contact" }}
+  {{- $jsPath := "alpha/js/alpha-contact.js" -}}
+  {{- $data := dict "Lang" .Site.Language.Lang "Site" .Site -}}
+  {{- $jsTpl := resources.Get $jsPath | resources.ExecuteAsTemplate (printf "alpha-contact-%s.js" .Site.Language.Lang) $data -}}
+  {{- $opts := dict "minify" hugo.IsProduction -}}
+  {{- $jsBuilt := $jsTpl | js.Build $opts -}}
+  {{- $finalJs := cond hugo.IsProduction ($jsBuilt | fingerprint) $jsBuilt -}}
+  <script
+    src="{{ $finalJs.RelPermalink }}"
+    {{- with $finalJs.Data.Integrity }}
+      integrity="{{- . -}}" crossorigin="anonymous"
+    {{- end }}
+  ></script>
+{{- end }}
+
+{{- /* Conditionally load the local Goatcounter script in PRODUCTION only */}}
+{{- with .Site.Params.goatcounter_prefix }}
+  {{- $goat := . }}
+  {{- if hugo.IsProduction }}
+    {{- with resources.Get "js/goatcounter.js" }}
+      {{- $opts := dict "minify" true }}
+      {{- $jsFinal := . | js.Build $opts }}
+      <script
+        data-goatcounter="https://{{- $goat -}}.goatcounter.com/count"
+        src="{{ $jsFinal.RelPermalink }}"
+        async
+      ></script>
+    {{- end }}
+  {{- else }}
+    {{- /* Display a console warning in development */}}
+    <script>
+      console.warn(
+        `Goatcounter is enabled in your config (goatcounter_prefix) but is not active in localhost. It will load automatically in production.`,
+      );
+    </script>
+  {{- end }}
+{{- end -}}

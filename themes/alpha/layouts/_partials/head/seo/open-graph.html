@@ -1,0 +1,58 @@
+{{- /*
+  Partial: head/seo/open-graph.html
+  Purpose: Accept values from `head/seo.html` and appends open-graph.
+
+  Repo: https://github.com/oxypteros/alpha
+*/}}
+{{- $data := . -}}
+
+
+<meta property="og:title" content="{{ $data.title }}" />
+<meta
+  property="og:description"
+  content="{{ $data.description | safeHTMLAttr }}"
+/>
+<meta property="og:url" content="{{ $data.permalink }}" />
+<meta property="og:site_name" content="{{ $data.siteTitle }}" />
+<meta
+  property="og:type"
+  content="{{- if $data.isHome -}}
+    website
+  {{- else -}}
+    article
+  {{- end -}}"
+/>
+{{- if not $data.isHome }}
+  {{- /* Print the author URL if it exists */}}
+  {{- with $data.authorURL }}
+    <meta property="article:author" content="{{ . }}" />
+  {{- end }}
+  {{- with $data.datePublished }}
+    {{- printf `<meta property="article:published_time" content="%s" />` . | safeHTML }}
+    {{- with $data.dateModified }}
+      {{- printf `<meta property="article:modified_time" content="%s" />` . | safeHTML }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- /* Multilingual or Single language logic */}}
+{{- if $data.inLanguage -}}
+  {{- if reflect.IsSlice $data.inLanguage -}}
+    {{- /* Multiple languages */}}
+    {{- range $i, $lang := $data.inLanguage }}
+      {{- if eq $i 0 }}
+        <meta property="og:locale" content="{{ $lang }}" />
+      {{- else }}
+        <meta property="og:locale:alternate" content="{{ $lang }}" />
+      {{- end }}
+    {{- end }}
+  {{- else }}
+    {{- /* Single language */}}
+    <meta property="og:locale" content="{{ $data.inLanguage }}" />
+  {{- end }}
+{{- end }}
+{{- with $data.image }}
+  <meta property="og:image" content="{{- . -}}" />
+  <meta property="og:image:width" content="{{- $data.imageWidth -}}" />
+  <meta property="og:image:height" content="{{- $data.imageHeight -}}" />
+{{- end -}}

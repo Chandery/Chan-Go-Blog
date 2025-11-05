@@ -1,0 +1,74 @@
+{{- /*
+  Partial: components/recommended-posts.html
+  Purpose: Renders links styled as card of pages marked as recommended.
+
+  Behavior:
+  - Displays a maximum of 4 recommended pages, selected randomly.
+  - Each card includes:
+  - A "New" indicator if the recommended item was published
+  within 7 days of the site build.
+  - Metadata: Shows series (if any) and the first category (if any)
+  of the recommended item.
+  - Decorative Accent: Displays the first letter of the recommended
+  item's title as a large, stylized background element.
+
+  Conditions for Display:
+  - At least one page must have `recommended = true` in its frontmatter.
+  - This section is displayed on all content pages, EXCEPT if the current page
+  belongs to a series and is NOT the last part of that series (determined by
+  `weight`).
+  - The current page is always excluded from the list of recommendations.
+
+  To-do:
+  1. Exclude the current page with another method (.Permalink?) to avoid
+  exclusions if pages have the same title
+  2. DRY: add the card rendering to a partial (duplicated code with paginator)
+
+  Repo: https://github.com/oxypteros/alpha
+*/}}
+{{- $currentPage := . }}
+{{- $lang := .Site.Language.Lang -}}
+{{- $cacheKey := printf "recommended_%s" $lang -}}
+
+{{- /* Get the recommended post from init-data-global partial. */}}
+{{- $allRecommended := hugo.Store.Get $cacheKey -}}
+
+{{- if $allRecommended }}
+  {{- /* Exclude the current page. */}}
+  {{- $recommendedPages := where $allRecommended ".File.UniqueID" "ne" $currentPage.File.UniqueID -}}
+
+  {{- /* If page is in a series display only on the last child of the series */}}
+  {{- $displaySection := true -}}
+  {{- with .Params.series -}}
+    {{- $seriesKey := . | lower -}}
+    {{- with index site.Taxonomies.series $seriesKey -}}
+      {{- if ne $currentPage.File.UniqueID (index (last 1 .Pages.ByWeight) 0).File.UniqueID -}}
+        {{- $displaySection = false -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- /* Render the section and load the card-post partial */}}
+  {{- if and $displaySection (gt (len $recommendedPages) 0) }}
+    <section class="mb-32 flex w-full flex-col items-center">
+      <div class="flex w-full grow items-center gap-4">
+        <div
+          class="bg-out-var dark:bg-out-var-d h-0.5 max-w-1/8 grow rounded-full"
+        ></div>
+        <h2 class="font-300 text-on-sur-var dark:text-on-sur-var-d text-3xl">
+          {{ i18n "RecommendedPosts" . }}
+        </h2>
+        <div class="bg-out-var dark:bg-out-var-d h-0.5 grow rounded-full"></div>
+      </div>
+      <div
+        class="mt-24 flex w-full flex-wrap items-center justify-center gap-25"
+      >
+        {{- $numPages := 4 -}}
+        {{- $sampleSize := math.Min (len $recommendedPages) $numPages -}}
+        {{- range first $sampleSize ($recommendedPages | shuffle) }}
+          {{- partial "components/card-post.html" . }}
+        {{- end }}
+      </div>
+    </section>
+  {{- end }}
+{{- end -}}

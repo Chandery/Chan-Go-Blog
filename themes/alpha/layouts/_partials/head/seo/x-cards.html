@@ -1,0 +1,26 @@
+{{- /*
+  Partial: head/seo/x-cards.html
+  Purpose: Accept values from `head/seo.html` and appends x-cards.
+
+  Repo: https://github.com/oxypteros/alpha
+*/}}
+{{- $page := .page -}}
+{{- $site := .Site }}
+{{- $data := . -}}
+
+{{- with $data.image }}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{ . }}">
+{{- else }}
+<meta name="twitter:card" content="summary">
+{{- end }}
+<meta name="twitter:url" content="{{- $data.permalink -}}" />
+<meta name="twitter:title" content="{{- $data.title -}}" />
+<meta name="twitter:description" content="{{- $data.description | safeHTMLAttr -}}" />
+
+{{- with $data.xSite }}
+  <meta name="twitter:site" content="@{{- . -}}" />
+{{- end }}
+{{- with $data.xCreator }}
+  <meta name="twitter:creator" content="@{{- . -}}" />
+{{- end -}}

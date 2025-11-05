@@ -1,0 +1,71 @@
+# Hugo Configuration for the Alpha Theme
+# This file defines Alpha specific parameters.
+#
+# It is recommended to place non theme-specific settings, like `baseURL` or 
+# `theme = "alpha"` in the root `hugo.toml` file.
+#
+# Documentation: https://alpha.oxypteros.com/docs/config/hugo-toml/
+
+# Global Settings
+enableEmoji = true
+
+# Pagination Settings
+[pagination]
+  disableAliases = false
+  pagerSize = 10 # Set the item number before pagination
+  path = 'page'
+
+# Content & Markup Configuration
+[markup.goldmark]
+    [markup.goldmark.parser]
+      autoHeadingIDType = 'github'
+      wrapStandAloneImageWithinParagraph = false
+    [markup.goldmark.extensions]
+      strikethrough = false
+      [markup.goldmark.extensions.extras]
+        [markup.goldmark.extensions.extras.delete]
+          enable = true
+        [markup.goldmark.extensions.extras.insert]
+          enable = true
+        [markup.goldmark.extensions.extras.mark]
+          enable = true
+        [markup.goldmark.extensions.extras.subscript]
+          enable = true
+        [markup.goldmark.extensions.extras.superscript]
+          enable = true
+      [markup.goldmark.extensions.passthrough]
+        enable = true
+        [markup.goldmark.extensions.passthrough.delimiters]
+          block = [['\[', '\]'], ['$$', '$$']]
+          inline = [['\(', '\)']]
+    [markup.goldmark.renderHooks]
+      [markup.goldmark.renderHooks.image]
+        enableDefault = true
+      [markup.goldmark.renderHooks.link]
+        enableDefault = true
+    [markup.goldmark.renderer]
+      hardWraps = true
+      unsafe = true
+
+# Code Highlight Settings
+[markup.highlight]
+    guessSyntax = true
+    noClasses = false
+    tabWidth = 2
+
+# Content Organization
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+  series = "series"
+
+# Build Outputs
+[outputs]
+  home = ["HTML", "RSS", "webappmanifest"]
+
+# Theme & Module Requirements
+[module]
+## Hugo versions this theme is tested and is compatible with.
+  [module.hugoVersion]
+    min = "0.146.1"
+    max = "0.150.0"

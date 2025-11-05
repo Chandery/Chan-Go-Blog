@@ -1,0 +1,107 @@
+{{- /*
+  Shortcode: social.html
+  Purpose: Renders a social network list with icons or text.
+
+  Target: homepage, sections (_index.md)
+
+  Example:
+  {{< social LIMIT="" >}}
+
+  Params:
+  - LIMIT (integral, optional): Number of menu item to show
+
+  Error handler:
+  - livaWarn (global)
+  - LiVa (scoped)
+
+  Docs: https://alpha.oxypteros.com/shortcodes/social
+  Repo: https://github.com/oxypteros/alpha
+*/}}
+{{- /* Shortcode rules */}}
+{{- $rules := index .Site.Data.shortcodes.rules .Name -}}
+
+{{- /* Vars */}}
+{{- $livaWarnEnabled := .Site.Params.livaWarn_enabled | default true -}}
+{{- $livaEnabled := and hugo.IsDevelopment (.Site.Params.liva_enabled | default true) -}}
+{{- $validInput := "" -}}
+{{- $validationResult := "" -}}
+
+{{- /* Get shortcodes rules and validate input */}}
+{{- if $rules -}}
+  {{- $rules = merge $rules (dict "scName" .Name) -}}
+  {{- $validationResult = partial "liva/core/shortcodes/validator.logic.html" (dict "rules" $rules "userInput" .Params) -}}
+  {{- $validInput = $validationResult.isValid }}
+{{- else -}}
+  {{- warnf "LiVa: No rules found in 'data/shortcodes/rules.toml' for shortcode '%s'. Validation will be skipped." .Name -}}
+{{- end -}}
+
+{{- /* On failed input validation call the LiVa handler */}}
+{{- if not $validInput -}}
+  {{- if or ($livaWarnEnabled) ($livaEnabled) -}}
+    {{- partial "liva/core/shortcodes/handler.logic.html" (dict "errors" $validationResult.errors "rules" $rules "page" .Page "position" .Position) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* * On successful validations render the shortcode */}}
+{{- if $validInput }}
+  {{- $data := $validationResult.data -}}
+  {{- $menuToRender := .Site.Menus.sc_social -}}
+
+  {{ if not $menuToRender }}
+    {{- if or ($livaWarnEnabled) ($livaEnabled) }}
+      {{- $errorData := dict
+        "context"         .
+        "name"            .Name
+        "errorCode"       "liva-sc-228"
+        "menu"            "[[sc_social]]"
+        "menuFile"        "config/_default/menus.toml"
+      -}}
+      {{- partial "liva/dispatchers/legacy/missing-menu.html" $errorData }}
+    {{- end }}
+  {{- end }}
+
+  {{- if $menuToRender }}
+    {{- if $data.limit -}}
+      {{- $intNumber := $data.limit -}}
+      {{- $menuToRender = first $intNumber $menuToRender -}}
+    {{- end -}}
+    {{- /* Create unique id's for aria-labels in case of multiple shortcodes */}}
+    {{- $base := .Page.File.BaseFileName | urlize }}
+    {{- $ordinal := .Ordinal | default (now.UnixNano) }}
+    {{- $uid := printf "%s-%v" $base $ordinal }}
+    <aside
+      class="sc-social mt-8 mb-32 flex w-full max-w-7xl items-center justify-center px-4"
+      aria-labelledby="social-heading-{{- $uid -}}"
+    >
+      <h2 id="social-heading-{{- $uid -}}" class="sr-only">
+        {{- i18n "SocialHeading" . | default "Social media links" }}
+      </h2>
+      <ul
+        class="flex w-full max-w-xl flex-wrap items-center justify-center gap-3"
+      >
+        {{- range $menuToRender }}
+          <li>
+            <a
+              class="group hover:text-pri dark:hover:text-pri-d flex rounded-full p-2"
+              href="{{ .URL }}"
+              aria-label="{{- i18n "FollowUsOn" . | default "Follow us on:" }} {{ .Name }}"
+            >
+              {{ with .Pre }}
+                <svg
+                  class="stroke-on-sur dark:stroke-on-sur-d dark:group-hover:stroke-pri-d group-hover:stroke-pri size-6"
+                  aria-hidden="true"
+                  width="20"
+                  height="20"
+                >
+                  <use href="{{ . }}"></use>
+                </svg>
+              {{- else }}
+                {{ .Name }}
+              {{- end }}
+            </a>
+          </li>
+        {{- end }}
+      </ul>
+    </aside>
+  {{- end }}
+{{- end -}}

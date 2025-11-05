@@ -1,0 +1,115 @@
+{{- /*
+  Shortcode: about.html
+  Purpose: Renders an about element with username and avatar.
+
+  Target: Global
+
+  Example:
+  {{< about AUTHOR="" AVATAR="">}}
+  /... Markdown Content ... /
+  {{< /about>}}
+
+  Params:
+  - AUTHOR (string, optional): H2 heading. Fall back to frontmatter author
+  - AVATAR (string, optional): Avatar filename placed inside '/assets/img/''
+
+  Error handler:
+  - livaWarn (global)
+  - LiVa (scoped)
+
+  Docs: https://alpha.oxypteros.com/docs/shortcodes/about
+  Repo: https://github.com/oxypteros/alpha
+*/}}
+{{- /* Shortcode rules */}}
+{{- $rules := index .Site.Data.shortcodes.rules .Name -}}
+
+{{- /* Vars */}}
+{{- $livaWarnEnabled := .Site.Params.livaWarn_enabled | default true -}}
+{{- $livaEnabled := and hugo.IsDevelopment (.Site.Params.liva_enabled | default true) -}}
+{{- $validInput := "" -}}
+{{- $validationResult := "" -}}
+
+{{- /* Get shortcodes rules and validate input */}}
+{{- if $rules -}}
+  {{- $rules = merge $rules (dict "scName" .Name) -}}
+  {{- $validationResult = partial "liva/core/shortcodes/validator.logic.html" (dict "rules" $rules "userInput" .Params) -}}
+  {{- $validInput = $validationResult.isValid }}
+{{- else -}}
+  {{- warnf "LiVa: No rules found in 'data/shortcodes/rules.toml' for shortcode '%s'. Validation will be skipped." .Name -}}
+{{- end -}}
+
+{{- /* On failed input validation call the LiVa handler */}}
+{{- if not $validInput -}}
+  {{- if or ($livaWarnEnabled) ($livaEnabled) -}}
+    {{- partial "liva/core/shortcodes/handler.logic.html" (dict "errors" $validationResult.errors "rules" $rules "page" .Page "position" .Position) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* * On successful validations render shortcode */}}
+{{- if $validInput }}
+  {{- $data := $validationResult.data -}}
+  {{- $content := .Inner | markdownify }}
+  {{- /* - Image validation */}}
+  {{- $path := printf "/img/%s" $data.avatar }}
+  {{- $image := "" }}
+  {{- if $data.avatar }}
+    {{- $image = resources.Get $path }}
+  {{- end }}
+  {{- $warnImg := false }}
+  {{- if and $data.avatar ( eq $image nil) }}
+    {{- $warnImg = true }}
+  {{- end }}
+
+  {{- if $warnImg }}
+    {{- if or ($livaWarnEnabled) ($livaEnabled) }}
+      {{- $errorData := dict
+        "context"         .
+        "name"            .Name
+        "errorCode"       "liva-sc-209"
+        "filename"        $data.avatar
+        "imgFolder"       "assets/img/"
+      -}}
+      {{- partial "liva/dispatchers/legacy/missing-img.html" $errorData }}
+    {{- end }}
+  {{- end }}
+
+  {{- /* ** Shortcode Rendering */}}
+  {{- /* - Create unique id's for aria-labels in case of multiple shortcodes */}}
+  {{- $base := .Page.File.BaseFileName | urlize }}
+  {{- $ordinal := .Ordinal | default (now.UnixNano) }}
+  {{- $uid := printf "%s-%v" $base $ordinal }}
+  <aside
+    class="sc-about mb-32 flex w-full max-w-7xl flex-wrap justify-center gap-10 px-4"
+    aria-labelledby="about-heading-{{- $uid -}}"
+  >
+    <div class="flex w-fit flex-col items-center gap-5">
+      {{- if and $data.avatar $image }}
+        {{- $webp := $image.Resize "100x100 webp" }}
+        {{- $webp2x := $image.Resize "200x200 webp" }}
+        <img
+          class="border-out dark:border-out-d h-25 w-25 rounded-full border shadow-lg"
+          src="{{ $webp.RelPermalink }}"
+          srcset="{{ $webp.RelPermalink }} 1x, {{ $webp2x.RelPermalink }} 2x"
+          loading="lazy"
+          decoding="async"
+          width="{{ $webp.Width }}"
+          height="{{ $webp.Height }}"
+          alt="{{ i18n "AvatarOf" . | default "Avatar of" }} {{ $data.author }}"
+        />
+      {{- end }}
+      {{- with $data.author }}
+        <h2
+          id="about-heading-{{- $uid -}}"
+          class="text-on-sur-var dark:text-on-sur-var-d w-fit text-center text-2xl"
+        >
+          {{- . -}}
+        </h2>
+      {{- else }}
+        <h2 id="about-heading-{{- $uid -}}" class="sr-only">
+          {{- i18n "AboutHeading" . | default "About Me" -}}
+        </h2>
+      {{- end }}
+    </div>
+    <article class="w-full max-w-xl">{{ $content }}</article>
+  </aside>
+{{- end -}}

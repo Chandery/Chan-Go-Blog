@@ -21,7 +21,7 @@ featured = false
 recommended = true
 
 # Publication Control
-draft = false
+draft = true
 layout = "page"
 
 # Advanced SEO
@@ -100,5 +100,6 @@ But if you do need more? Hugo certainly won’t get in your way.
 ### And The Cherry on Top
 
 If you pair Hugo with the **Alpha theme** (***yes, shameless plug***), your site won’t just build fast, it’ll be *even simpler* to just start writing. But more on that on the next *why*.  
+
 
 [^1]: Used one of [Hugo's themes](https://themes.gohugo.io/)

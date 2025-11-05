@@ -19,12 +19,12 @@ parts = "Second Why"
 weight = 3
 
 # Display
-dropcap = true
-featured = true
+featured = false
 recommended = true
+# thumbnail = ""  # Optional: Add thumbnail image URL here
 
 # Publication Control
-draft = false
+draft = true
 layout = "story"
 
 # Advanced SEO

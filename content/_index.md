@@ -1,7 +1,7 @@
 +++
 # Content Identity
-title = "Home Page"
-description = "Home page description, a must for SEO and social shares"
+title = "Chandery's Blog"
+description = "Still waters run deep"
 
 # Dates
 date = "2025-05-20T21:32:02+02:00"
@@ -17,22 +17,22 @@ seo_image = ""
 twitter_username = ""
 +++
 
-{{< status_card TITLE="Just Shortcodes" TYPE="info" >}}
+<!-- {{< status_card TITLE="Just Shortcodes" TYPE="info" >}}
 
 Rearrange your webpages as you see fit for your needs. 
 Other than your text in Alpha everything else is **shortcodes**!
 
-{{< /status_card >}}
+{{< /status_card >}} -->
 
 {{< hero 
-  TITLE="Welcome to your Site!" 
-  SUBTITLE="Meet Alpha, a theme for text journeys." 
-  BTN-TEXT="Start with the Docs" 
-  BTN-LINK="https://alpha.oxypteros.com/docs/" 
-  BTN-LABEL="Read the official documentation of Alpha" 
-  LINK-TEXT="Browse the GitHub Repo" 
-  LINK="https://github.com/oxypteros/alpha/" 
-  LINK-LABEL="Visit the official Alpha repository" 
+  TITLE="Explorer's Arch" 
+  SUBTITLE=" Welcome to my channel. Feel free to find whatever you want." 
+  BTN-TEXT="GitHub Profile" 
+  BTN-LINK="https://github.com/Chandery" 
+  BTN-LABEL="Visit my GitHub profile" 
+  LINK-TEXT="Email Address" 
+  LINK="mailto:chandery1112@gmail.com" 
+  LINK-LABEL="Send me an email" 
 >}}
 
 {{< featured STYLE="banner">}}

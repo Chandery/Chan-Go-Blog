@@ -4,9 +4,9 @@
 # Documentation: https://alpha.oxypteros.com/docs/config/hugo-toml
 
 baseURL = "https://example.com" # Replace with production URL
-title = "Alpha Theme"
+title = "Chandery's Blog"
 theme = "alpha"
-#timeZone = "Europe/Rome"
+#timeZone = "Asia/Beijing"
 
 
 # Tailwind Integration (Build Options) 

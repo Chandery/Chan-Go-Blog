@@ -22,7 +22,7 @@ featured = false
 recommended = true
 
 # Publication Control
-draft = false
+draft = true
 layout = "page"
 
 # Advanced SEO

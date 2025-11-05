@@ -20,6 +20,8 @@ motto = "\"Unleash your words\""
 pagefind_enabled   = false
 # Enables GoatCounter analytics. Enter your site code here. (requires sign-up)
 goatcounter_prefix = ""
+# Enables MathJax for rendering mathematical formulas.
+math_enabled = true
 
 # Performance
 # ---------------------
